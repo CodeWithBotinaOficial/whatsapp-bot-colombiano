@@ -1,0 +1,49 @@
+services:
+  whatsapp-bot:
+    build: .
+    container_name: whatsapp-bot
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    env_file: .env
+    volumes:
+      - ./src:/app/src
+    networks:
+      - bot-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; import sys; try: urllib.request.urlopen('http://localhost:5000/health').read(); sys.exit(0) except Exception as e: print(e); sys.exit(1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok-tunnel
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./start_ngrok.sh:/start_ngrok.sh
+    ports:
+      - "4040:4040"
+    networks:
+      - bot-network
+    depends_on:
+      - whatsapp-bot
+    entrypoint: ["/bin/sh", "/start_ngrok.sh"]
+
+  tests:
+    build: .
+    container_name: whatsapp-bot-tests
+    command: pytest tests/ -v --cov=src --cov-report=term-missing
+    environment:
+      - TWILIO_ACCOUNT_SID=test
+      - TWILIO_AUTH_TOKEN=test
+      - SECRET_KEY=test-key-for-tests-only
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+
+networks:
+  bot-network:
+    driver: bridge
