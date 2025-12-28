@@ -128,7 +128,7 @@ class ColombianPersonality:
     def get_positive_response(self) -> str:
         """Returns a random positive response."""
         response = random.choice(self.POSITIVE_RESPONSES)
-        return self._add_colombian_flavor(response)
+        return self.add_colombian_flavor(response)
     
     def get_encouragement(self) -> str:
         """Returns a random encouragement phrase."""
